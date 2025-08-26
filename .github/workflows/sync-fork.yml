@@ -2,8 +2,8 @@ name: Sync Fork
 
 on:
   schedule:
-    - cron: '0 18 * * *'   # every day at 18:00 UTC
-  workflow_dispatch:
+    - cron: '0 18 * * *'   # run every day at 18:00 UTC
+  workflow_dispatch:        # allow manual trigger
 
 jobs:
   sync:
@@ -24,17 +24,25 @@ jobs:
         run: |
           git remote remove upstream || true
           git remote add upstream https://github.com/MoonTechLab/LunaTV.git
+          git fetch upstream
 
-      - name: Fetch upstream
-        run: git fetch upstream
+      - name: Find default branches
+        id: branch
+        run: |
+          # Detect fork default branch
+          fork_branch=$(git symbolic-ref --short refs/remotes/origin/HEAD | sed 's@^origin/@@')
+          echo "FORK_BRANCH=$fork_branch" >> $GITHUB_ENV
+
+          # Detect upstream default branch
+          upstream_branch=$(git remote show upstream | sed -n '/HEAD branch/s/.*: //p')
+          echo "UPSTREAM_BRANCH=$upstream_branch" >> $GITHUB_ENV
 
       - name: Merge upstream changes
         run: |
-          git checkout main || git checkout master
-          git merge upstream/main --no-edit || git merge upstream/master --no-edit || true
+          git checkout $FORK_BRANCH
+          git merge upstream/$UPSTREAM_BRANCH --no-edit || echo "No changes to merge"
 
       - name: Push changes back to fork
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git push origin main || git push origin master
+        run: git push origin $FORK_BRANCH
