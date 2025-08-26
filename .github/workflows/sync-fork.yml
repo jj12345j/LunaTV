@@ -21,7 +21,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Add upstream remote
-        run: git remote add upstream https://github.com/MoonTechLab/LunaTV
+        run: git remote add upstream https://github.com/MoonTechLab/LunaTV.git
 
       - name: Fetch upstream
         run: git fetch upstream
